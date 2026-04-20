@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import createPlotlyComponent from "react-plotly.js/factory";
-import Plotly from "plotly.js-dist-min";
+import factoryDefault from "react-plotly.js/factory";
+import plotlyDefault from "plotly.js-dist-min";
 
 import type { ComputeResponse } from "../lib/api";
 
@@ -8,7 +8,17 @@ import type { ComputeResponse } from "../lib/api";
 // pairing for browser bundlers. It avoids the CJS default-import ambiguity
 // that caused React error #130 when using `import Plot from 'react-plotly.js'`
 // under Vite/Rolldown.
-const Plot = createPlotlyComponent(Plotly as object);
+//
+// Defensive unwrap: some Vite + CJS prebundler paths deliver these modules
+// wrapped as `{ default: real }` instead of unwrapping them. Handle both.
+function unwrap<T>(mod: T | { default: T }): T {
+  return (mod as { default?: T })?.default ?? (mod as T);
+}
+const createPlotlyComponent = unwrap(factoryDefault) as (
+  plotly: object,
+) => React.ComponentType<import("react-plotly.js").PlotParams>;
+const Plotly = unwrap(plotlyDefault) as object;
+const Plot = createPlotlyComponent(Plotly);
 
 const BAND_INNER = "rgba(20, 184, 166, 0.30)";
 const BAND_OUTER = "rgba(20, 184, 166, 0.15)";
