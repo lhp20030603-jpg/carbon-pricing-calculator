@@ -17,16 +17,11 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
-    // Plotly.js is heavy; split it into its own chunk to keep the main bundle lean.
-    rollupOptions: {
-      output: {
-        manualChunks: (id: string) => {
-          if (id.includes("plotly.js") || id.includes("react-plotly.js")) {
-            return "plotly";
-          }
-          return undefined;
-        },
-      },
+    // Strip `<link rel="modulepreload">` for the lazy Plotly chunk so the
+    // ~1.4 MB gzipped bundle is fetched only when the chart actually renders.
+    modulePreload: {
+      resolveDependencies: (_url, deps) =>
+        deps.filter((dep) => !dep.includes("plotly")),
     },
   },
 });

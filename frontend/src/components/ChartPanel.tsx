@@ -1,8 +1,14 @@
-import type { ReactNode } from "react";
+import { Suspense, lazy, type ReactNode } from "react";
 
 import type { ComputeResponse } from "../lib/api";
-import { FanChart } from "./FanChart";
 import { Button, Pill } from "./primitives";
+
+// Plotly is a ~1.4 MB gzipped chunk; defer the download until the chart must
+// render, so first paint isn't blocked. The dynamic import also removes the
+// `modulepreload` hint from the initial HTML.
+const FanChart = lazy(() =>
+  import("./FanChart").then((m) => ({ default: m.FanChart })),
+);
 
 type ComputeState =
   | { status: "idle" }
@@ -38,7 +44,11 @@ export function ChartPanel({ state }: { state: ComputeState }) {
       </div>
       <div className="p-2">
         {state.status === "success" ? (
-          <FanChart result={state.result} />
+          <Suspense
+            fallback={<PlaceholderFrame>Loading chart library…</PlaceholderFrame>}
+          >
+            <FanChart result={state.result} />
+          </Suspense>
         ) : (
           <PlaceholderFrame>{renderPlaceholder(state)}</PlaceholderFrame>
         )}
