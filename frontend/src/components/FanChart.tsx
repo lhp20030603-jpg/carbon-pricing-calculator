@@ -1,7 +1,14 @@
 import { useMemo } from "react";
-import Plot from "react-plotly.js";
+import createPlotlyComponent from "react-plotly.js/factory";
+import Plotly from "plotly.js-dist-min";
 
 import type { ComputeResponse } from "../lib/api";
+
+// React-plotly's factory + plotly.js-dist-min is the officially recommended
+// pairing for browser bundlers. It avoids the CJS default-import ambiguity
+// that caused React error #130 when using `import Plot from 'react-plotly.js'`
+// under Vite/Rolldown.
+const Plot = createPlotlyComponent(Plotly as object);
 
 const BAND_INNER = "rgba(20, 184, 166, 0.30)";
 const BAND_OUTER = "rgba(20, 184, 166, 0.15)";
