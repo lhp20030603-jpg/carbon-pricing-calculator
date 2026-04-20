@@ -1,6 +1,7 @@
 import { Suspense, lazy, type ReactNode } from "react";
 
 import type { ComputeResponse } from "../lib/api";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { Button, Pill } from "./primitives";
 
 // Plotly is a ~1.4 MB gzipped chunk; defer the download until the chart must
@@ -44,11 +45,30 @@ export function ChartPanel({ state }: { state: ComputeState }) {
       </div>
       <div className="p-2">
         {state.status === "success" ? (
-          <Suspense
-            fallback={<PlaceholderFrame>Loading chart library…</PlaceholderFrame>}
+          <ErrorBoundary
+            fallback={({ error, reset }) => (
+              <PlaceholderFrame>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <div className="text-[color:var(--color-crit-500)]">
+                    Chart rendering failed: {error.message}
+                  </div>
+                  <div className="text-xs text-[color:var(--color-ink-500)]">
+                    The compute response is still available — this is a
+                    display-layer error.
+                  </div>
+                  <Button variant="secondary" onClick={reset}>
+                    Try rendering again
+                  </Button>
+                </div>
+              </PlaceholderFrame>
+            )}
           >
-            <FanChart result={state.result} />
-          </Suspense>
+            <Suspense
+              fallback={<PlaceholderFrame>Loading chart library…</PlaceholderFrame>}
+            >
+              <FanChart result={state.result} />
+            </Suspense>
+          </ErrorBoundary>
         ) : (
           <PlaceholderFrame>{renderPlaceholder(state)}</PlaceholderFrame>
         )}
