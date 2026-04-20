@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Node / Vite
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+/frontend/dist/
+/frontend/.vite/
+.DS_Store
+
+# OS / editor
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+
+# Logs and temp scratch
+*.log
+/tmp/
+temp/
+
+# Secrets — never commit
+settings.json
+*.pem
+*.key
+credentials.json
+
+# Claude Code session artefacts (may contain transcripts)
+.claude/

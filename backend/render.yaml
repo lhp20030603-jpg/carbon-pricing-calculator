@@ -1,0 +1,18 @@
+# Render deploy config (SPEC §6.4).
+# Docs: https://render.com/docs/yaml-spec
+services:
+  - type: web
+    name: carbon-pricing-calculator-api
+    runtime: docker
+    plan: free
+    region: oregon
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: CORS_ORIGINS
+        # Set this to the production Vercel origin(s), comma-separated.
+        # Example: https://carbon-pricing-calculator.vercel.app
+        sync: false
