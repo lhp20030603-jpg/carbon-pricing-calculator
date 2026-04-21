@@ -215,7 +215,15 @@ export interface components {
         };
         /**
          * ReferenceEntry
-         * @description Literature coefficient alternate served from references.db.
+         * @description Literature reference served from references.db (SPEC §5.2).
+         *
+         *     Extended in v1.2: `method_type`, `headline_finding`, `comparison_note`,
+         *     `warning_label`. Only `log_log_elasticity` entries are usable for
+         *     `/api/compute`; the other types (meta-analysis ATT, growth-rate
+         *     semi-elasticities) are carried purely as external-validation context and
+         *     are dimensionally incompatible with the reduced-form response function.
+         *     `coefficient` / `std_err` are optional because the scalar interpretation
+         *     varies across method types and is not defined for meta-analyses.
          */
         ReferenceEntry: {
             /** Id */
@@ -227,11 +235,22 @@ export interface components {
             /** Sector */
             sector: string;
             /** Coefficient */
-            coefficient: number;
+            coefficient?: number | null;
             /** Std Err */
-            std_err: number;
+            std_err?: number | null;
             /** Method */
             method: string;
+            /**
+             * Method Type
+             * @enum {string}
+             */
+            method_type: "log_log_elasticity" | "att_pct_reduction" | "semi_elasticity_growth";
+            /** Headline Finding */
+            headline_finding?: string | null;
+            /** Comparison Note */
+            comparison_note?: string | null;
+            /** Warning Label */
+            warning_label?: string | null;
             /** Notes */
             notes?: string | null;
             /** Url */

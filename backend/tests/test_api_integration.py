@@ -107,3 +107,47 @@ class TestComputeBadInput:
         inputs["alpha"] = 0.9  # outside [0.10, 0.60]
         r = client.post("/api/compute", json={"inputs": inputs})
         assert r.status_code == 422
+
+    def test_non_log_log_coefficient_rejected(self) -> None:
+        """Meta-analysis / growth-rate entries are dimensionally incompatible
+        with the reduced-form response function and must never run compute."""
+        inputs = _current_preset_inputs()
+        inputs["coefficient_source"] = "dobbeling_hildebrandt_2024"
+        r = client.post("/api/compute", json={"inputs": inputs})
+        assert r.status_code == 400
+        assert "method_type" in r.json()["detail"]
+
+
+class TestReferencesMetadata:
+    """Literature library now carries method_type + comparison metadata (v1.2)."""
+
+    def test_all_entries_have_method_type(self) -> None:
+        r = client.get("/api/references").json()
+        for ref in r:
+            assert ref["method_type"] in {
+                "log_log_elasticity",
+                "att_pct_reduction",
+                "semi_elasticity_growth",
+            }
+
+    def test_only_liu_is_log_log(self) -> None:
+        r = client.get("/api/references").json()
+        log_log_ids = [ref["id"] for ref in r if ref["method_type"] == "log_log_elasticity"]
+        assert log_log_ids == ["author_did_2026"]
+
+    def test_new_literature_entries_present(self) -> None:
+        r = client.get("/api/references").json()
+        ids = {ref["id"] for ref in r}
+        assert {
+            "author_did_2026",
+            "dobbeling_hildebrandt_2024",
+            "rafaty_dolphin_pretis_2025",
+            "best_burke_jotzo_2020",
+        }.issubset(ids)
+
+    def test_comparison_and_warning_present_on_nonlog_entries(self) -> None:
+        r = client.get("/api/references").json()
+        for ref in r:
+            if ref["method_type"] != "log_log_elasticity":
+                assert ref["comparison_note"], f"{ref['id']} missing comparison_note"
+                assert ref["warning_label"], f"{ref['id']} missing warning_label"

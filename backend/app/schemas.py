@@ -169,8 +169,24 @@ class ScenarioPreset(BaseModel):
     inputs: ScenarioInputs
 
 
+MethodType = Literal[
+    "log_log_elasticity",
+    "att_pct_reduction",
+    "semi_elasticity_growth",
+]
+
+
 class ReferenceEntry(BaseModel):
-    """Literature coefficient alternate served from references.db."""
+    """Literature reference served from references.db (SPEC §5.2).
+
+    Extended in v1.2: `method_type`, `headline_finding`, `comparison_note`,
+    `warning_label`. Only `log_log_elasticity` entries are usable for
+    `/api/compute`; the other types (meta-analysis ATT, growth-rate
+    semi-elasticities) are carried purely as external-validation context and
+    are dimensionally incompatible with the reduced-form response function.
+    `coefficient` / `std_err` are optional because the scalar interpretation
+    varies across method types and is not defined for meta-analyses.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -178,9 +194,13 @@ class ReferenceEntry(BaseModel):
     citation: str
     region: str
     sector: str
-    coefficient: float
-    std_err: float
+    coefficient: float | None = None
+    std_err: float | None = None
     method: str
+    method_type: MethodType
+    headline_finding: str | None = None
+    comparison_note: str | None = None
+    warning_label: str | None = None
     notes: str | None = None
     url: str | None = None
 

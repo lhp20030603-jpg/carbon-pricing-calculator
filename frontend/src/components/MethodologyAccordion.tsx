@@ -2,7 +2,7 @@ export function MethodologyAccordion() {
   return (
     <details className="rounded-xl border border-[color:var(--color-ink-100)] bg-white open:bg-white">
       <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-[color:var(--color-ink-700)]">
-        Methodology & caveats
+        Methodology &amp; caveats
       </summary>
       <div className="space-y-4 border-t border-[color:var(--color-ink-100)] px-4 py-4 text-sm leading-relaxed text-[color:var(--color-ink-700)]">
         <section>
@@ -23,16 +23,49 @@ export function MethodologyAccordion() {
             treatment.
           </p>
         </section>
+
         <section>
           <h3 className="mb-1 text-sm font-semibold">Coefficient provenance</h3>
           <p>
-            Default β̂ = −0.2273 (SE 0.0793) from Liu (2026) matched-DID on six
-            treated provinces across China's pilot ETS (2013–2020). Alternate
-            coefficients are served from the backend <code>references.db</code>
-            {" "}and carry their own region/sector context; applying a non-China
-            coefficient triggers an explicit scope mismatch warning.
+            The simulation uses a single elasticity: β̂ = −0.2273 (SE 0.0793)
+            from Liu (2026), matched-DID on six treated provinces of China's
+            pilot ETS, 2013–2020, thermal-power sector. This is the only
+            coefficient the calculator ever runs with.
+          </p>
+          <p className="mt-1">
+            The "Coefficient &amp; literature context" dropdown — and the
+            side-by-side comparison panel below the KPI cards — surface three
+            other studies for external validation. They deliberately do{" "}
+            <span className="italic">not</span> swap into the model, because
+            their estimators aren't dimensionally comparable with a log-log
+            semi-elasticity:
+          </p>
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-xs">
+            <li>
+              <span className="font-medium">Meta-analysis ATTs</span>{" "}
+              (Döbbeling-Hildebrandt et al., 2024) report a percentage
+              reduction in emissions once a carbon price is introduced —
+              neither a price response function nor dimensionally matched to
+              β̂.
+            </li>
+            <li>
+              <span className="font-medium">Growth-rate semi-elasticities</span>{" "}
+              (Rafaty/Dolphin/Pretis 2025; Best/Burke/Jotzo 2020) express the
+              effect as "percentage points of annual growth per $1/tCO₂". The
+              units are percentage-points-of-growth, not log-emissions.
+            </li>
+          </ul>
+          <p className="mt-1">
+            These three references therefore work as{" "}
+            <span className="font-medium">convergent validity checks</span>:
+            if this tool returned, say, a 70% reduction at current-policy
+            prices, all three literatures would flag the result as
+            implausible. The fact that this tool returns ~12% under the
+            Current Policy preset is consistent with the 5–21% band reported
+            by the 2024 meta-analysis.
           </p>
         </section>
+
         <section>
           <h3 className="mb-1 text-sm font-semibold">External validity caveats</h3>
           <ul className="list-disc space-y-1 pl-5 text-xs">
@@ -53,11 +86,13 @@ export function MethodologyAccordion() {
             </li>
           </ul>
         </section>
+
         <section>
           <h3 className="mb-1 text-sm font-semibold">Further reading</h3>
           <p className="text-xs">
-            Download the full methodology report (LaTeX source + PDF) and read
-            the companion English blog for the dissertation → tool framing.
+            Full methodology PDF (LaTeX source + compiled) and the companion
+            English blog post explain the dissertation → tool framing in
+            detail.
           </p>
         </section>
       </div>

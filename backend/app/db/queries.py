@@ -51,11 +51,16 @@ def get_coefficients() -> dict[str, Any]:
     return out
 
 
+_REFERENCE_COLS = (
+    "id, citation, region, sector, coefficient, std_err, method, method_type, "
+    "headline_finding, comparison_note, warning_label, notes, url"
+)
+
+
 def list_references() -> list[ReferenceEntry]:
     conn = _connect("references.db")
     rows = conn.execute(
-        "SELECT id, citation, region, sector, coefficient, std_err, method, notes, url "
-        'FROM "references" ORDER BY id'
+        f'SELECT {_REFERENCE_COLS} FROM "references" ORDER BY id'
     )
     return [ReferenceEntry(**_row_to_dict(r)) for r in rows]
 
@@ -63,8 +68,7 @@ def list_references() -> list[ReferenceEntry]:
 def get_reference(reference_id: str) -> ReferenceEntry | None:
     conn = _connect("references.db")
     row = conn.execute(
-        "SELECT id, citation, region, sector, coefficient, std_err, method, notes, url "
-        'FROM "references" WHERE id = ?',
+        f'SELECT {_REFERENCE_COLS} FROM "references" WHERE id = ?',
         (reference_id,),
     ).fetchone()
     if row is None:

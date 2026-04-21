@@ -1,12 +1,14 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ActionButtons } from "./components/ActionButtons";
 import { AdvancedPanel } from "./components/AdvancedPanel";
 import { CaveatsPanel } from "./components/CaveatsPanel";
 import { ChartPanel, type ComputeState } from "./components/ChartPanel";
 import { CoefficientSelect } from "./components/CoefficientSelect";
+import { CrossCheckNote } from "./components/CrossCheckNote";
 import { Header } from "./components/Header";
 import { KPICards } from "./components/KPICards";
+import { LiteratureComparison } from "./components/LiteratureComparison";
 import { MethodologyAccordion } from "./components/MethodologyAccordion";
 import { PricePathEditor } from "./components/PricePathEditor";
 import { ScenarioCards } from "./components/ScenarioCards";
@@ -21,6 +23,8 @@ import {
 import { useScenarioState } from "./hooks/useScenarioState";
 import { SLIDER_META } from "./store/defaults";
 
+const COMPUTE_COEFFICIENT_ID = "author_did_2026";
+
 function App() {
   const health = useHealthPing();
   const presets = useScenarioPresets();
@@ -28,6 +32,11 @@ function App() {
   const compute = useComputeMutation();
   const { inputs, patch, replace, applyPreset, activePresetId } = useScenarioState(
     presets.data ?? [],
+  );
+  // Independent display state — the dropdown only drives which reference
+  // card is shown in detail. The simulation always runs with Liu 2026.
+  const [selectedReferenceId, setSelectedReferenceId] = useState<string>(
+    COMPUTE_COEFFICIENT_ID,
   );
 
   // Auto-run Compute once the preset library lands so the chart is populated
@@ -54,6 +63,8 @@ function App() {
     if (backendOnline === null) return { status: "warming" };
     return { status: "idle" };
   }, [compute, backendOnline, inputs]);
+
+  const referenceList = references.data ?? [];
 
   return (
     <div className="min-h-full">
@@ -89,9 +100,9 @@ function App() {
                 onChange={(v) => patch({ free_allocation_share: v })}
               />
               <CoefficientSelect
-                references={references.data ?? []}
-                value={inputs.coefficient_source}
-                onChange={(id) => patch({ coefficient_source: id })}
+                references={referenceList}
+                value={selectedReferenceId}
+                onChange={setSelectedReferenceId}
               />
             </div>
           </Card>
@@ -113,6 +124,7 @@ function App() {
 
           {compute.data ? (
             <>
+              <CrossCheckNote result={compute.data} references={referenceList} />
               <KPICards result={compute.data} />
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <Card>
@@ -120,7 +132,7 @@ function App() {
                   <CaveatsPanel caveats={compute.data.caveats} />
                 </Card>
                 <Card>
-                  <SectionTitle title="Coefficient used" />
+                  <SectionTitle title="Coefficient used for this run" />
                   <div className="text-sm leading-relaxed">
                     <div className="font-semibold text-[color:var(--color-ink-900)]">
                       {compute.data.coefficient.label}
@@ -138,6 +150,7 @@ function App() {
                   </div>
                 </Card>
               </div>
+              <LiteratureComparison references={referenceList} />
             </>
           ) : null}
 

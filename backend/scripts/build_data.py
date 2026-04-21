@@ -5,12 +5,14 @@ Usage:
 
 Produces (overwriting) under ``app/data/``:
   - coefficients.db  — versioned numeric constants (E_2020, default coefficient id)
-  - references.db    — literature coefficient library (author's DID + alternates)
+  - references.db    — literature library (author's DID + external-validity refs)
   - scenarios.db     — curated preset scenarios (SPEC §8.1)
 
-SPEC §5 is source of truth for schemas; the literature alternates are stylised
-summary values pending a full review and are clearly labelled as such via the
-`notes` field.
+SPEC §5 is source of truth for schemas. The v1.2 schema extension on
+`references` adds `method_type`, `headline_finding`, `comparison_note`, and
+`warning_label` so the frontend can render dimensional compatibility warnings
+next to each citation. Only `log_log_elasticity` entries are ever used for
+`/api/compute`; everything else is external validation context.
 """
 
 from __future__ import annotations
@@ -56,7 +58,7 @@ def _build_coefficients_db() -> None:
                     "default_coefficient_id",
                     "author_did_2026",
                     "str",
-                    "Liu 2026 dissertation DID estimate",
+                    "Liu 2026 dissertation DID estimate — sole coefficient used for compute",
                 ),
             ],
         )
@@ -68,6 +70,8 @@ def _build_coefficients_db() -> None:
 # --- references.db ------------------------------------------------------------
 
 
+# Only `author_did_2026` is used by /api/compute; everything else is
+# external-validity context with a different functional form.
 _REFERENCES: list[dict[str, Any]] = [
     {
         "id": "author_did_2026",
@@ -81,41 +85,114 @@ _REFERENCES: list[dict[str, Any]] = [
         "coefficient": -0.2273,
         "std_err": 0.0793,
         "method": "Matched DID, 6 treated provinces, 2013–2020",
-        "notes": "Default coefficient. Pilot ETS period; see §4.4 caveats.",
+        "method_type": "log_log_elasticity",
+        "headline_finding": (
+            "Log-log price semi-elasticity of emissions, β̂ = −0.2273 "
+            "(SE 0.0793, p = 0.006) estimated from the pilot ETS window."
+        ),
+        "comparison_note": (
+            "Sole coefficient used for this tool's simulation. All scenarios "
+            "run with this estimate; other entries on this list are shown for "
+            "external validation only."
+        ),
+        "warning_label": None,
+        "notes": (
+            "Default coefficient. Pilot ETS period; see §4.4 for extrapolation "
+            "caveats when prices exceed the training range."
+        ),
         "url": None,
     },
     {
-        "id": "green_2021_review",
+        "id": "dobbeling_hildebrandt_2024",
         "citation": (
-            "Green, J. F. (2021). Does carbon pricing reduce emissions? A review "
-            "of ex-post analyses. Environmental Research Letters, 16(4), 043004."
+            "Döbbeling-Hildebrandt, N., Miersch, K., Khanna, T. M., Bachelet, M., "
+            "Bruns, S. B., Callaghan, M., Edenhofer, O., Flachsland, C., Forster, "
+            "P. M., Kalkuhl, M., Koch, N., Lamb, W. F., Ohlendorf, N., Steckel, "
+            "J. C., & Minx, J. C. (2024). Systematic review and meta-analysis of "
+            "ex-post evaluations on the effectiveness of carbon pricing. Nature "
+            "Communications, 15, 4147."
         ),
-        "region": "OECD average",
-        "sector": "Cross-sector",
-        "coefficient": -0.05,
-        "std_err": 0.03,
-        "method": "Systematic review (stylised mid-range)",
-        "notes": (
-            "Illustrative mid-range summary of reviewed effect sizes. Scope "
-            "mismatch warning will fire when applied to China."
+        "region": "Global (21 carbon-pricing schemes)",
+        "sector": "Cross-sector (aggregated)",
+        "coefficient": None,
+        "std_err": None,
+        "method": "Meta-analysis of 483 effect sizes across 80 causal evaluations",
+        "method_type": "att_pct_reduction",
+        "headline_finding": (
+            "Introducing a carbon price reduces emissions by 5–21% "
+            "(4–15% after publication-bias correction) across 80 causal "
+            "evaluations of 21 carbon-pricing schemes."
         ),
-        "url": "https://doi.org/10.1088/1748-9326/abdae9",
+        "comparison_note": (
+            "This tool's ~12% cumulative reduction under the Current Policy "
+            "preset (P 80→100 CNY/tCO₂, f=0.90) sits inside the 5–21% range "
+            "reported by this meta-analysis, providing convergent validity."
+        ),
+        "warning_label": (
+            "Meta-analysis ATT — reports average treatment effects on the "
+            "treated, not a log-log price elasticity. Do not substitute."
+        ),
+        "notes": "Nature Communications, open access.",
+        "url": "https://doi.org/10.1038/s41467-024-48512-w",
     },
     {
-        "id": "best_2020_cross_country",
+        "id": "rafaty_dolphin_pretis_2025",
         "citation": (
-            "Best, R., Burke, P. J., & Jotzo, F. (2020). Carbon pricing efficacy: "
-            "Cross-country evidence. Environmental and Resource Economics, 77(1), 69–94."
+            "Rafaty, R., Dolphin, G., & Pretis, F. (2025). Carbon pricing and "
+            "the elasticity of CO₂ emissions. Energy Economics, 144, 108325."
         ),
         "region": "Cross-country panel",
-        "sector": "Cross-sector",
-        "coefficient": -0.08,
-        "std_err": 0.025,
-        "method": "Panel fixed-effects, 1997–2017",
-        "notes": (
-            "Stylised translation of the headline price-on-emissions effect to a "
-            "log-log semi-elasticity; see notes in methodology.pdf."
+        "sector": "Multi-sector (electricity & heat subset)",
+        "coefficient": None,
+        "std_err": None,
+        "method": "Reduced-form, growth-rate semi-elasticity",
+        "method_type": "semi_elasticity_growth",
+        "headline_finding": (
+            "Each additional US$1/tCO₂ lowers the emissions growth rate by "
+            "≈0.06 percentage points. Carbon-pricing introduction reduces "
+            "growth by 1–2 pp overall; electricity & heat ATT reaches −6.5 pp."
         ),
+        "comparison_note": (
+            "Units are 'growth-rate percentage points per $1/tCO₂', not the "
+            "log-log semi-elasticity used here. Sign and order of magnitude "
+            "align with the tool's direction of effect, but direct numerical "
+            "substitution is not meaningful."
+        ),
+        "warning_label": (
+            "Different functional form (growth-rate pp per $1). For direction "
+            "check only — not a log-log elasticity."
+        ),
+        "notes": "Energy Economics, 2025.",
+        "url": "https://doi.org/10.1016/j.eneco.2025.108325",
+    },
+    {
+        "id": "best_burke_jotzo_2020",
+        "citation": (
+            "Best, R., Burke, P. J., & Jotzo, F. (2020). Carbon Pricing "
+            "Efficacy: Cross-Country Evidence. Environmental and Resource "
+            "Economics, 77(1), 69–94."
+        ),
+        "region": "Cross-country panel (142 countries)",
+        "sector": "Economy-wide",
+        "coefficient": None,
+        "std_err": None,
+        "method": "Panel fixed effects, growth-rate semi-elasticity, 1997–2017",
+        "method_type": "semi_elasticity_growth",
+        "headline_finding": (
+            "Countries with a carbon price see annual CO₂ emissions growth "
+            "≈2 pp lower than countries without. Each €1/tCO₂ reduces annual "
+            "growth by ≈0.3 pp."
+        ),
+        "comparison_note": (
+            "Economy-wide, cross-country evidence across 142 nations; this "
+            "tool focuses on China's thermal-power sector. The operating scale "
+            "and functional form differ, so this is a qualitative comparison."
+        ),
+        "warning_label": (
+            "Economy-wide, cross-country growth-rate semi-elasticity. Not "
+            "directly comparable with sector-specific log-log elasticity."
+        ),
+        "notes": "Environmental and Resource Economics, 2020.",
         "url": "https://doi.org/10.1007/s10640-020-00436-x",
     },
 ]
@@ -133,9 +210,18 @@ def _build_references_db() -> None:
                 citation TEXT NOT NULL,
                 region TEXT NOT NULL,
                 sector TEXT NOT NULL,
-                coefficient REAL NOT NULL,
-                std_err REAL NOT NULL,
+                coefficient REAL,
+                std_err REAL,
                 method TEXT NOT NULL,
+                method_type TEXT NOT NULL
+                    CHECK (method_type IN (
+                        'log_log_elasticity',
+                        'att_pct_reduction',
+                        'semi_elasticity_growth'
+                    )),
+                headline_finding TEXT,
+                comparison_note TEXT,
+                warning_label TEXT,
                 notes TEXT,
                 url TEXT
             );
@@ -143,9 +229,13 @@ def _build_references_db() -> None:
         )
         for ref in _REFERENCES:
             conn.execute(
-                'INSERT INTO "references"(id, citation, region, sector, coefficient, '
-                "std_err, method, notes, url) VALUES "
-                "(:id, :citation, :region, :sector, :coefficient, :std_err, :method, :notes, :url)",
+                'INSERT INTO "references"('
+                "id, citation, region, sector, coefficient, std_err, method, "
+                "method_type, headline_finding, comparison_note, warning_label, "
+                "notes, url) VALUES ("
+                ":id, :citation, :region, :sector, :coefficient, :std_err, "
+                ":method, :method_type, :headline_finding, :comparison_note, "
+                ":warning_label, :notes, :url)",
                 ref,
             )
         conn.commit()
@@ -179,7 +269,7 @@ def _peak_ramp(start: float, peak: float, tail: float, peak_year_index: int, n: 
     out = _linear(start, peak, peak_year_index + 1)
     if peak_year_index + 1 < n:
         tail_segment = _linear(peak, tail, n - peak_year_index)
-        out.extend(tail_segment[1:])  # skip repeated peak point
+        out.extend(tail_segment[1:])
     return out
 
 
@@ -192,7 +282,8 @@ def _build_preset_inputs(prices: list[float], free_alloc: float) -> dict[str, An
     assert len(prices) == len(years), f"expected {len(years)} prices, got {len(prices)}"
     return {
         "price_path": [
-            {"year": y, "price_cny": round(p, 3)} for y, p in zip(years, prices, strict=True)
+            {"year": y, "price_cny": round(p, 3)}
+            for y, p in zip(years, prices, strict=True)
         ],
         "free_allocation_share": free_alloc,
         "coefficient_source": "author_did_2026",

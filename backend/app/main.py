@@ -80,6 +80,22 @@ def _resolve_coefficient(source_id: str) -> ReferenceEntry:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unknown coefficient_source '{source_id}'. See GET /api/references.",
         )
+    if ref.method_type != "log_log_elasticity":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Reference '{source_id}' has method_type '{ref.method_type}' and "
+                "is dimensionally incompatible with the reduced-form response "
+                "function. Only log-log elasticity entries (currently "
+                "'author_did_2026') can be used for compute. Other entries are "
+                "served for external-validation context only."
+            ),
+        )
+    if ref.coefficient is None or ref.std_err is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Reference '{source_id}' is missing coefficient/std_err data.",
+        )
     return ref
 
 
@@ -106,8 +122,9 @@ def _response_from_result(
         coefficient=CoefficientRecord(
             source_id=coefficient.id,
             label=coefficient.citation.split(".")[0],
-            beta=coefficient.coefficient,
-            std_err=coefficient.std_err,
+            # Guaranteed non-None by _resolve_coefficient's method_type guard.
+            beta=coefficient.coefficient if coefficient.coefficient is not None else 0.0,
+            std_err=coefficient.std_err if coefficient.std_err is not None else 0.0,
             region=coefficient.region,
             sector=coefficient.sector,
             citation=coefficient.citation,
@@ -139,6 +156,10 @@ def scenarios() -> list[ScenarioPreset]:
 @app.post("/api/compute", response_model=ComputeResponse)
 def compute(request: ComputeRequest) -> ComputeResponse:
     coefficient = _resolve_coefficient(request.inputs.coefficient_source)
+    # _resolve_coefficient already guarantees these are not None and the
+    # method_type is log-log elasticity; mypy can't see through that.
+    assert coefficient.coefficient is not None
+    assert coefficient.std_err is not None
     result = compute_scenario(
         inputs=request.inputs,
         beta=coefficient.coefficient,
